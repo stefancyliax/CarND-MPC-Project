@@ -6,8 +6,10 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 10;
-double dt = 0.1;
+size_t N = 0;
+// 0.1 is a good 
+double dt = 0;
+// this calculates to looking 1 second into the future
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -20,9 +22,8 @@ double dt = 0.1;
 //
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
-
-// NOTE: feel free to play around with this
-// or do something completely different
+double ref_cte = 0;
+double ref_epsi = 0;
 double ref_v = 120;
 
 // The solver takes all the state variables and actuator
