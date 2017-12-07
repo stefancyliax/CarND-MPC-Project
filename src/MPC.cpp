@@ -26,7 +26,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 double ref_cte = 0;
 double ref_epsi = 0;
-double ref_v = 120;
+double ref_v = 100;
 
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
@@ -63,24 +63,25 @@ public:
     // The part of the cost based on the reference state.
     for (int t = 0; t < N; t++)
     {
-      fg[0] += CppAD::pow(vars[cte_start + t], 2);
-      fg[0] += CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += 100 * CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += 500 * CppAD::pow(vars[epsi_start + t], 2);
       fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
 
     // Minimize the use of actuators.
-    for (int t = 0; t < N - 1; t++)
-    {
-      fg[0] += CppAD::pow(vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start + t], 2);
-    }
+    // This is a race car and has real weight. I don't think I need to limit the use of the actuators.
+    // for (int t = 0; t < N - 1; t++)
+    // {
+    //   fg[0] += CppAD::pow(vars[delta_start + t], 2);
+    //   fg[0] += CppAD::pow(vars[a_start + t], 2);
+    // }
 
     // Minimize the value gap between sequential actuations.
-    for (int t = 0; t < N - 2; t++)
-    {
-      fg[0] += 500 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
-    }
+    // for (int t = 0; t < N - 2; t++)
+    // {
+    //   fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+    //   fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+    // }
 
     //
     // Setup Constraints
@@ -155,7 +156,7 @@ MPC::~MPC() {}
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 {
   bool ok = true;
-  size_t i;
+  //size_t i;
   typedef CPPAD_TESTVECTOR(double) Dvector;
 
   double x = state[0];
@@ -278,7 +279,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs)
 
   // Cost
   auto cost = solution.obj_value;
-  // std::cout << "Cost " << cost << std::endl;
+  std::cout << "Cost " << cost << std::endl;
 
   // Return the first actuator values. The variables can be accessed with
   // `solution.x[i]`.

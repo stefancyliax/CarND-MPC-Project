@@ -88,7 +88,7 @@ int main()
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    //cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2')
     {
       string s = hasData(sdata);
@@ -111,7 +111,7 @@ int main()
 
           /*****************************
           fit polynominal to waypoints
-          /*****************************/
+          *****************************/
           // loop over waypoints and transform from map space to vehicle space
           for (int i = 0; i < ptsx.size(); i++)
           {
@@ -122,16 +122,16 @@ int main()
           }
           // pointer magic as in project video to get polyfit to work
           double *ptrx = &ptsx[0];
-          Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);
+          Eigen::Map<Eigen::VectorXd> ptsx_vehicle(ptrx, 6);
           double *ptry = &ptsy[0];
-          Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
+          Eigen::Map<Eigen::VectorXd> ptsy_vehicle(ptry, 6);
           // polyfit onto waypoints in vehicle coordinate system
           auto coeffs = polyfit(ptsx_vehicle, ptsy_vehicle, 3);
 
           /******************************
           generate state of vehicle 
           ******************************/
-          // calulate cte as horizontal to polinominal.
+          // calulate cte as horizontal to polynominal.
           // TODO: calculate cte as shortest distance to polynominal
           double cte = polyeval(coeffs, 0);
           // calculate epsi
@@ -153,7 +153,8 @@ int main()
           // take steering and throttle from mpc
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          steer_value = vars[0] / (deg2rad(25) * Lf);
+          steer_value = -vars[0] / (deg2rad(25) * 2.67); // * Lf);
+          cout << "Steervalue: " << steer_value << "    vars[0]: " << vars[0] << endl;
           throttle_value = vars[1];
 
 
@@ -163,19 +164,19 @@ int main()
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
 
-          // display fitted polynominal as reference line
-          // display 25*2.5 m = 62.5 m in front of the vehicle
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
+          // display fitted polynominal as reference line
+          // display 25*2.5 m = 62.5 m in front of the vehicle
           float poly_inc = 2.5;
-          for (i = 1; i < 25; i++)
+          for (int i = 1; i < 25; i++)
           {
             next_x_vals.push_back(i * poly_inc);
             next_y_vals.push_back(polyeval(coeffs, i * poly_inc));
           }
 
-          //// alternative: display waypoints
+          // // alternative: display waypoints
           // next_x_vals = ptsx;
           // next_y_vals = ptsy;
 
