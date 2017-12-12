@@ -142,8 +142,35 @@ int main()
           double steer_value = j[1]["steering_angle"];
           double throttle_value = j[1]["throttle"];
 
+
+          /**
+           * update state with delay 
+           * 
+          **/
+          // Approximation of accelerating and braking speed dependend on throttle.
+          double a0 = throttle_value * 5.0; 
+          double delta0 = steer_value;
+          const double Lf = 2.67;
+          const double dt = 0.1;
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi;
+
+          if (dt != 0)
+          {
+            double x1 = (v * dt); // in the coordinate system of the car, psi = 0  and cos(psi) = 1; 
+            double y1 = 0.0; // since we are in the coordinate system of the car, psi = 0 and sin(psi) = 0;
+            double psi1 = v * -delta0 / Lf * dt;
+            double v1 = (v + a0 * dt);
+            double cte1 = cte + (v * sin(epsi) * dt);
+            double epsi1 = epsi + v * -delta0 / Lf * dt;
+            state << x1, y1, psi1, v1, cte1, epsi1;
+          }
+          else
+          {
+            state << 0, 0, 0, v, cte, epsi;
+          }
+           
+
+          cout << "Steering Value: " << steer_value << "  throttle value: " << throttle_value << endl;
       
 
           /******************************
@@ -230,7 +257,7 @@ int main()
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
           // TODO: Use delay to calculate state in the future and use this as initial state
-          //this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       }
