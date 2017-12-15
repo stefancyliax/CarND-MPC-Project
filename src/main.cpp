@@ -149,7 +149,8 @@ int main()
           **/
           // Approximation of accelerating and braking speed dependend on throttle.
           double a0 = throttle_value * 5.0; 
-          double delta0 = steer_value;
+          double delta0 = -steer_value;
+          v *= 0.44704; // conversion miles/h to m/s
           const double Lf = 2.67;
           const double dt = 0.1;
           Eigen::VectorXd state(6);
@@ -158,17 +159,22 @@ int main()
           {
             double x1 = (v * dt); // in the coordinate system of the car, psi = 0  and cos(psi) = 1; 
             double y1 = 0.0; // since we are in the coordinate system of the car, psi = 0 and sin(psi) = 0;
-            double psi1 = v * -delta0 / Lf * dt;
+            double psi1 = v * delta0 / Lf * dt;
             double v1 = (v + a0 * dt);
             double cte1 = cte + (v * sin(epsi) * dt);
-            double epsi1 = epsi + v * -delta0 / Lf * dt;
+            double epsi1 = epsi + v * delta0 / Lf * dt;
             state << x1, y1, psi1, v1, cte1, epsi1;
+            
+            cout << "x1, y1: " << x1 << ", " << y1 << endl;
+            cout << "psi1: " << psi1 << endl;
+            cout << "v0, v1: " << v << ", " << v1 << endl;
+            cout << "cte, cte 1: " << cte << ", " << cte1 << endl;
+            cout << "epsi, epsi1: " << epsi << ", " << epsi1 << endl << endl;
           }
           else
           {
             state << 0, 0, 0, v, cte, epsi;
           }
-           
 
           cout << "Steering Value: " << steer_value << "  throttle value: " << throttle_value << endl;
       
@@ -257,7 +263,7 @@ int main()
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
           // TODO: Use delay to calculate state in the future and use this as initial state
-          this_thread::sleep_for(chrono::milliseconds(100));
+          // this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       }
