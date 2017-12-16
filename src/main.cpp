@@ -114,9 +114,9 @@ int main()
           // cout << "psi, v: " << psi << ", " << v << endl;
 
           /******************************
-           * update state with delay 
-           * First predict postion of vehicle after delay and then use this state
-           * This is done in map coordinates
+          Update state with delay 
+          First predict postion of vehicle after delay and then use this state
+          - This is done in map coordinates
           ******************************/
           const double dt = 0.1;
           const double Lf = 2.67;
@@ -141,6 +141,7 @@ int main()
           // cout << "psi, v: " << psi << ", " << v << endl << endl;
 
           /*****************************
+          Transform waypoints to vehicle coordinate system and 
           fit polynominal to waypoints
           *****************************/
           // loop over waypoints and transform from map space to vehicle space
@@ -162,7 +163,7 @@ int main()
           auto coeffs = polyfit(ptsx_vehicle, ptsy_vehicle, 3);
 
           /******************************
-           * generate state of vehicle 
+          create state of vehicle 
           ******************************/
           // calculate cte as horizontal distance to polynominal at x=0.
           double cte = polyeval(coeffs, 0);
@@ -232,7 +233,7 @@ int main()
 
 
           /******************************
-           * create message for sending back to simulator
+          create message for sending back to simulator
           ******************************/
           json msgJson;
           msgJson["steering_angle"] = steer_value;
