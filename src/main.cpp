@@ -108,46 +108,37 @@ int main()
           double py = j[1]["y"];              // global y position of the vehicle
           double psi = j[1]["psi"];           // orientation of the vehicle in radians converted from the Unity format to the standard format expected in most mathematical functions
           double v = j[1]["speed"];           // speed in mpg
-                
+          
+          // Debug output
+          // cout << "reported state px, py: " << px << ", " << py << endl;
+          // cout << "psi, v: " << psi << ", " << v << endl;
+
           /******************************
            * update state with delay 
-           * TODO: 
            * First predict postion of vehicle after delay and then use this state
            * This is done in map coordinates
           ******************************/
           const double dt = 0.1;
           const double Lf = 2.67;
-          
+
           // use current throttle_value to estimate acceleration
           double throttle_value = j[1]["throttle"];
-          double a = throttle_value * 7.5;  
+          double a = throttle_value * 7.5;
           double v_ms = v * 0.44704; // correction factor mph to m/s
-          
+
           // use current steering angle
           double steer_value = j[1]["steering_angle"];
-          double delta = -steer_value; 
+          double delta = -steer_value;
 
           // predict map coordinates of vehicle after dt=0.1s
-          double px1 = px + v_ms * cos(psi) * dt; 
-          double py1 = py + v_ms * sin(psi) * dt; 
-          double psi1 = psi + v_ms / Lf * delta * dt;
-          double v1 = v + a * dt;
+          px = px + v_ms * cos(psi) * dt;
+          py = py + v_ms * sin(psi) * dt;
+          psi = psi + v_ms / Lf * delta * dt;
+          v = v + a * dt;
 
-          cout << "reported state px, py: " << px << ", " << py << endl; 
-          cout << "predicted state state px, py: " << px1 << ", " << py1 << endl; 
-          cout << "psi, v: " << psi << ", " << v << endl; 
-          cout << "psi, v: " << psi1 << ", " << v1 << endl << endl; 
-
-          // use predicted state as current
-          px = px1;
-          py = py1;
-          psi = psi1;
-          v = v1;          
-
-          cout << "ptsx:" << endl;
-          for (auto val : ptsx) cout << " " << val << endl;
-          cout << "ptsy:" << endl;
-          for (auto val : ptsy) cout << " " << val << endl;
+          // Debug output
+          // cout << "predicted state state px, py: " << px << ", " << py << endl;
+          // cout << "psi, v: " << psi << ", " << v << endl << endl;
 
           /*****************************
           fit polynominal to waypoints
@@ -157,46 +148,30 @@ int main()
           {
             double xd = ptsx[i] - px;
             double yd = ptsy[i] - py;
-            double xd1 = ptsx[i] - px1;
-            double yd1 = ptsy[i] - py1;
-
             ptsx[i] = (xd * cos(-psi) - yd * sin(-psi));
             ptsy[i] = (xd * sin(-psi) + yd * cos(-psi));
-            cout << "Waypoint: " << ptsx[i] << ", " << ptsy[i] << endl;
-
-            cout << "py: " << py << ", py1: " << py1 << endl;
-            cout << "yd: " << yd << ", yd1: " << yd1 << endl;
-            cout << "delta: " << delta << endl;
-            cout << "psi: " << psi << ", psi1: " << psi1 << endl;
-            // cout << "Waypoint after delay: " << ((xd1 * cos(-psi1)) - (yd1 * sin(-psi1)));
-            // cout << ", " << ((xd1 * sin(-psi1)) + (yd1 * cos(-psi1))) << endl << endl;
           }
+
           // pointer magic as in project video to get polyfit to work
           double *ptrx = &ptsx[0];
           Eigen::Map<Eigen::VectorXd> ptsx_vehicle(ptrx, 6);
           double *ptry = &ptsy[0];
           Eigen::Map<Eigen::VectorXd> ptsy_vehicle(ptry, 6);
+
           // polyfit onto waypoints in vehicle coordinate system
           auto coeffs = polyfit(ptsx_vehicle, ptsy_vehicle, 3);
 
           /******************************
-          generate state of vehicle 
+           * generate state of vehicle 
           ******************************/
-          // calulate cte as horizontal to polynominal.
-          // TODO: calculate cte as shortest distance to polynominal
+          // calculate cte as horizontal distance to polynominal at x=0.
           double cte = polyeval(coeffs, 0);
           // calculate epsi
           double epsi = -atan(coeffs[1]);
 
-
-
-
+          // set current (or predicted state) as working state for optimizer
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
-
-
-          //cout << "Steering Value: " << steer_value << "  throttle value: " << throttle_value << endl;
-      
 
           /******************************
           call model predictive control to calculate steering angle and throttle
@@ -205,10 +180,8 @@ int main()
           // take steering and throttle from mpc
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          steer_value = -vars[0] / deg2rad(25); // Optimizer predicts steering angle between [-25°, 25°] / [-0.436rad, 0.436rad]. This has to be normalized to [-1, 1]
-          //cout << "Steervalue: " << steer_value << "    vars[0]: " << vars[0] << endl;
+          steer_value = -vars[0] / deg2rad(25);
           throttle_value = vars[1];
-
 
           /*******************************
           Display the waypoints/reference line
@@ -221,37 +194,34 @@ int main()
 
           // display fitted polynominal as reference line
           // display 25*2.5 m = 62.5 m in front of the vehicle
-          // float poly_inc = 2.5;
-          // for (int i = 1; i < 25; i++)
-          // {
-          //   next_x_vals.push_back(i * poly_inc);
-          //   next_y_vals.push_back(polyeval(coeffs, i * poly_inc));
-          // }
+          float poly_inc = 2.5;
+          for (int i = 1; i < 25; i++)
+          {
+            next_x_vals.push_back(i * poly_inc);
+            next_y_vals.push_back(polyeval(coeffs, i * poly_inc));
+          }
 
           // // alternative: display waypoints
-          next_x_vals = ptsx;
-          next_y_vals = ptsy;
+          // next_x_vals = ptsx;
+          // next_y_vals = ptsy;
 
-          
           //Display the MPC predicted trajectory
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
-          
-          // for (int i = 2; i < vars.size(); i++)
-          // {
-          //   if (i%2 == 0)
-          //   {
-          //     mpc_x_vals.push_back(vars[i]);
-          //   }
-          //   else
-          //   {
-          //     mpc_y_vals.push_back(vars[i]);
-          //   }
-          // }
-          mpc_x_vals.push_back(px);
-          mpc_y_vals.push_back(py);
+
+          for (int i = 2; i < vars.size(); i++)
+          {
+            if (i % 2 == 0)
+            {
+              mpc_x_vals.push_back(vars[i]);
+            }
+            else
+            {
+              mpc_y_vals.push_back(vars[i]);
+            }
+          }
 
           //// alternative: display fitted polynominal
           // float poly_inc = 2.5;
@@ -259,11 +229,11 @@ int main()
           //   mpc_x_vals.push_back(i * poly_inc);
           //   mpc_y_vals.push_back(polyeval(coeffs, i * poly_inc));
           // }
-          
-          
-          
-            
-          // create message for sending back to simulator
+
+
+          /******************************
+           * create message for sending back to simulator
+          ******************************/
           json msgJson;
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
@@ -283,7 +253,7 @@ int main()
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          // TODO: Use delay to calculate state in the future and use this as initial state
+          // Use delay to calculate state in the future and use this as initial state
           this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
