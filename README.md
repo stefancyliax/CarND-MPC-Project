@@ -89,7 +89,7 @@ Finally I lightly penalized the use of the throttle as well as the derivative of
 
 
 ## Dealing with latency
-TO improve the realism of the scenario we introduced a delay of 100ms before the sending of the new actuations to the simulator. Naturally this massively deteriorated the vehicle control. After the delay the predicted actuations just didn't match the current state of the vehicle. To give an example, after 100ms at 100 mph, the vehicle would be 4,5 meters further down the road. 
+To improve the realism of the scenario we introduced a delay of 100ms before the sending of the new actuations to the simulator. Naturally this massively deteriorated the vehicle control. After the delay the predicted actuations just didn't match the current state of the vehicle. To give an example, after 100ms at 100 mph, the vehicle would be 4,5 meters further down the road. 
 
 To handle this I added in another functional block that used the current vehicle state and current steering and throttle state to predict the vehicle state 100ms in the future. 
 This was then assumed to be current state and used as described above. 
