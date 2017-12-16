@@ -60,6 +60,7 @@ public:
     // Reference State Cost
     // Define the cost related the reference state and
     // any anything you think may be beneficial.
+    
     // The part of the cost based on the reference state.
     for (int t = 0; t < N; t++)
     {
@@ -69,7 +70,6 @@ public:
     }
 
     // Minimize the use of actuators.
-    // This is a race car and has real weight. I don't think I need to limit the use of the actuators.
     for (int t = 0; t < N - 1; t++)
     {
       fg[0] += 20000 * CppAD::pow(vars[delta_start + t], 2);
